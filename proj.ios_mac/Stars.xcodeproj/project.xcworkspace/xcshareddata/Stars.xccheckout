@@ -12,20 +12,24 @@
 	<dict>
 		<key>852ED3691A47A99B0D19C820A500AE9772B2A44E</key>
 		<string>https://github.com/cocos2d/cocos2d-x.git</string>
+		<key>C8DCB7E918EADAFAC2924BAA00F728009F0C27B2</key>
+		<string>https://github.com/willorfang/Stars.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>Stars/proj.ios_mac/Stars.xcodeproj</string>
+	<string>proj.ios_mac/Stars.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>852ED3691A47A99B0D19C820A500AE9772B2A44E</key>
-		<string>../../../..</string>
+		<string>../../../../cocos2d-x</string>
+		<key>C8DCB7E918EADAFAC2924BAA00F728009F0C27B2</key>
+		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>https://github.com/cocos2d/cocos2d-x.git</string>
+	<string>https://github.com/willorfang/Stars.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>852ED3691A47A99B0D19C820A500AE9772B2A44E</string>
+	<string>C8DCB7E918EADAFAC2924BAA00F728009F0C27B2</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
@@ -35,6 +39,14 @@
 			<string>852ED3691A47A99B0D19C820A500AE9772B2A44E</string>
 			<key>IDESourceControlWCCName</key>
 			<string>cocos2d-x</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>C8DCB7E918EADAFAC2924BAA00F728009F0C27B2</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Stars</string>
 		</dict>
 	</array>
 </dict>

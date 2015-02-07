@@ -1,5 +1,6 @@
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
+#include "StarLayer.h"
 
 USING_NS_CC;
 
@@ -38,7 +39,10 @@ bool AppDelegate::applicationDidFinishLaunching() {
     director->setAnimationInterval(1.0 / 60);
 
     // create a scene. it's an autorelease object
-    auto scene = HelloWorld::createScene();
+//    auto scene = HelloWorld::createScene();
+    auto scene = Scene::create();
+    auto layer = StarLayer::createInstance(12, 18);
+    scene->addChild(layer);
 
     // run
     director->runWithScene(scene);
