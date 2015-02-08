@@ -24,12 +24,8 @@ Star* Star::createInstance(StarType type)
 {
     auto pRet = new Star();
     //
-    pRet->setLeftStar(nullptr);
-    pRet->setRightStar(nullptr);
-    pRet->setTopStar(nullptr);
-    pRet->setBottomStar(nullptr);
-    //
     if (pRet && pRet->initWithFile(s_StarIconArray[type])) {
+        pRet->setType(type);
         pRet->autorelease();
         return pRet;
     } else {

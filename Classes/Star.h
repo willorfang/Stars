@@ -28,10 +28,6 @@ public:
     void setStarSize(cocos2d::Size size);
 
     CC_SYNTHESIZE(StarType, m_type, Type)
-    CC_SYNTHESIZE(Star*, m_leftStar, LeftStar)
-    CC_SYNTHESIZE(Star*, m_rightStar, RightStar)
-    CC_SYNTHESIZE(Star*, m_topStar, TopStar)
-    CC_SYNTHESIZE(Star*, m_bottomStar, BottomStar)
 
 };
 

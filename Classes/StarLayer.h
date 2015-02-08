@@ -28,6 +28,15 @@ public:
     CC_SYNTHESIZE(int, m_width, Width)
     CC_SYNTHESIZE(int, m_height, Height)
     
+    // geometry info
+    CC_SYNTHESIZE(cocos2d::Size, m_starSize, StarSize)
+    CC_SYNTHESIZE(cocos2d::Vec2, m_origin, Origin)
+    
+    // touch process
+    void registerTouchListener();
+    void onStarTouched(int row, int column);
+    void findSameStars(std::multimap<int, int>& mapItem, int row, int column);
+    
 private:
     std::vector< std::vector<Star*> > m_starTable;
     
