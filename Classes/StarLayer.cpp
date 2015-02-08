@@ -32,7 +32,7 @@ StarLayer* StarLayer::createInstance(int width, int height)
         // star size
         Size starSize;
         starSize.width = (size.width - s_leftMargin - s_rightMargin) / width;
-        starSize.height = (size.height - s_topMargin - s_bottomMargin) / height;
+        starSize.height = starSize.width;
         
         // add stars
         for (int i=0; i<height; ++i) {
