@@ -11,6 +11,8 @@
 
 #include "cocos2d.h"
 
+#define STAR_DEBUG
+
 class Star;
 
 class StarLayer : public cocos2d::Layer
@@ -44,9 +46,15 @@ public:
     
     void dropStar(int row, int column, size_t dropHeightCount);
     
+#ifdef STAR_DEBUG
+    void setDebugNode();
+#endif
+    
 private:
     std::vector< std::vector<Star*> > m_starTable;
-    
+#ifdef STAR_DEBUG
+    cocos2d::DrawNode* m_debugNode;
+#endif
 };
 
 #endif /* defined(__Stars__StarLayer__) */

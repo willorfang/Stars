@@ -57,10 +57,21 @@ StarLayer* StarLayer::createInstance(int width, int height)
                 pRet->addStar(i, j, item);
             }
         }
+#ifdef STAR_DEBUG
+        pRet->setDebugNode();
+#endif
     }
     
     return pRet;
 }
+
+#ifdef STAR_DEBUG
+void StarLayer::setDebugNode()
+{
+    m_debugNode = DrawNode::create();
+    this->addChild(m_debugNode, 1000);
+}
+#endif
 
 void StarLayer::initStarTableSize(int width, int height)
 {
@@ -202,6 +213,20 @@ void StarLayer::onStarTouched(int row, int column)
                 this->dropStar(rowIndex, columnIndex, removedItemCount);
             }
         }
+        
+#ifdef STAR_DEBUG
+        m_debugNode->clear();
+        // draw rect for null position
+        for (int i=0; i<m_height; ++i) {
+            for (int j=0; j<m_width; ++j) {
+                if (!hasStarAtIndex(i, j)) {
+                    Vec2 pos = m_origin + Vec2((j+0.5)*m_starSize.width, (i+0.5)*m_starSize.height);
+                    m_debugNode->drawDot(pos, 15, Color4F(1, 0, 0, 0.5));
+                }
+            }
+        }
+#endif
+        
     },
     Star::getRemoveAnimationTime(),
     "DropStar"
