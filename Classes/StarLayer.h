@@ -21,8 +21,8 @@ public:
     
     // origin is left-bottom
     void initStarTableSize(int width, int height);
-    void addStar(int i, int j, Star* item);
-    void removeStar(int i, int j);
+    void addStar(int row, int column, Star* item);
+    void removeStar(int row, int column);
     
     // the number of stars
     CC_SYNTHESIZE(int, m_width, Width)
@@ -36,6 +36,13 @@ public:
     void registerTouchListener();
     void onStarTouched(int row, int column);
     void findSameStars(std::multimap<int, int>& mapItem, int row, int column);
+    
+    bool hasStarAtIndex(int row, int column)
+    {
+        return m_starTable[row][column] != nullptr;
+    }
+    
+    void dropStar(int row, int column, size_t dropHeightCount);
     
 private:
     std::vector< std::vector<Star*> > m_starTable;

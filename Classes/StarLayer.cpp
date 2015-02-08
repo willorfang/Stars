@@ -73,24 +73,24 @@ void StarLayer::initStarTableSize(int width, int height)
     }
 }
 
-void StarLayer::addStar(int i, int j, Star* item)
+void StarLayer::addStar(int row, int column, Star* item)
 {
     if (item != nullptr) {
         this->addChild(item);
         //
-        if (m_starTable[i][j] != nullptr) {
-            this->removeChild(m_starTable[i][j]);
+        if (m_starTable[row][column] != nullptr) {
+            this->removeChild(m_starTable[row][column]);
         }
-        m_starTable[i][j] = item;
+        m_starTable[row][column] = item;
     }
 
 }
 
-void StarLayer::removeStar(int i, int j)
+void StarLayer::removeStar(int row, int column)
 {
-    if (m_starTable[i][j] != nullptr) {
-        this->removeChild(m_starTable[i][j]);
-        m_starTable[i][j] = nullptr;
+    if (m_starTable[row][column] != nullptr) {
+        this->removeChild(m_starTable[row][column]);
+        m_starTable[row][column] = nullptr;
     }
 }
 
@@ -103,13 +103,13 @@ void StarLayer::registerTouchListener()
         // get pos
         Point pos = this->convertToNodeSpace(touch->getLocation());
         // get node index
-        int x, y;
-        x = (pos.x - m_origin.x) / m_starSize.width;
-        y = (pos.y - m_origin.y) / m_starSize.height;
-        if (x > m_width-1 || y > m_height-1) {
+        int column, row;
+        column = (pos.x - m_origin.x) / m_starSize.width;
+        row = (pos.y - m_origin.y) / m_starSize.height;
+        if (column > m_width-1 || row > m_height-1) {
             return false;
         } else {
-            this->onStarTouched(y, x);
+            this->onStarTouched(row, column);
             return true;
         }
     };
@@ -131,28 +131,28 @@ static bool isMapItemExist(const multimap<int, int>& mapItem, int key, int value
 void StarLayer::findSameStars(multimap<int, int>& mapItem, int row, int column) {
     mapItem.insert(make_pair(column, row));
     // left
-    if (column>0
+    if (column > 0
         && !isMapItemExist(mapItem, column-1, row)
         && m_starTable[row][column-1] != nullptr
         && m_starTable[row][column-1]->getType() == m_starTable[row][column]->getType()) {
         findSameStars(mapItem, row, column-1);
     }
     // right
-    if (column+1<m_width
+    if (column+1 < m_width
         && !isMapItemExist(mapItem, column+1, row)
         && m_starTable[row][column+1] != nullptr
         && m_starTable[row][column+1]->getType() == m_starTable[row][column]->getType()) {
         findSameStars(mapItem, row, column+1);
     }
     // bottom
-    if (row>0
+    if (row > 0
         && !isMapItemExist(mapItem, column, row-1)
         && m_starTable[row-1][column] != nullptr
         && m_starTable[row-1][column]->getType() == m_starTable[row][column]->getType()) {
         findSameStars(mapItem, row-1, column);
     }
     // top
-    if (row+1<m_height
+    if (row+1 < m_height
         && !isMapItemExist(mapItem, column, row+1)
         && m_starTable[row+1][column] != nullptr
         && m_starTable[row+1][column]->getType() == m_starTable[row][column]->getType()) {
@@ -162,16 +162,54 @@ void StarLayer::findSameStars(multimap<int, int>& mapItem, int row, int column) 
 
 void StarLayer::onStarTouched(int row, int column)
 {
-    // find the same stars
+    // if there is no star
+    if (!hasStarAtIndex(row, column)) {
+        return;
+    }
+    
+    // <column, row> need to be removed
     multimap<int, int> touchedStarIndexes;
+    map<int, int> removedTopIndexes;
     this->findSameStars(touchedStarIndexes, row, column);
     
     // remove from graph scene
     if (touchedStarIndexes.size() > 1) {
-        for (auto i=touchedStarIndexes.begin(); i != touchedStarIndexes.end(); ++i) {
-            this->removeStar(i->second, i->first);
+        for (auto i = touchedStarIndexes.begin(); i != touchedStarIndexes.end(); ++i) {
+            int rowIndex = i->second;
+            int columnIndex = i->first;
+            this->removeStar(rowIndex, columnIndex);
+            // find max row
+            if (removedTopIndexes.count(columnIndex) == 0
+                || removedTopIndexes[columnIndex] < rowIndex) {
+                removedTopIndexes[columnIndex] = rowIndex;
+            }
         }
     }
     
-    // drop
+    // drop stars
+    for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
+        for (int rowIndex = i->second + 1; rowIndex < m_height; ++rowIndex) {
+            int columnIndex = i->first;
+            // reach top
+            if (! hasStarAtIndex(rowIndex, columnIndex)) {
+                break;
+            }
+            // drop
+            size_t removedItemCount = touchedStarIndexes.count(columnIndex);
+            this->dropStar(rowIndex, columnIndex, removedItemCount);
+        }
+    }
+}
+
+void StarLayer::dropStar(int row, int column, size_t dropHeightCount)
+{
+    // move item
+    Star* item = m_starTable[row][column];
+    Vec2 pos = item->getPosition() - Vec2(0, dropHeightCount * m_starSize.height);
+    item->moveToWithAnimation(pos);
+    
+    // update table
+    m_starTable[row][column] = nullptr;
+    assert(m_starTable[row-dropHeightCount][column] == nullptr);
+    m_starTable[row-dropHeightCount][column] = item;
 }

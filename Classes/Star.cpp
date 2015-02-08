@@ -41,3 +41,8 @@ void Star::setStarSize(cocos2d::Size size)
     this->setScaleX(size.width / contentSize.width);
     this->setScaleY(size.height / contentSize.height);
 }
+
+void Star::moveToWithAnimation(cocos2d::Vec2 pos)
+{
+    this->setPosition(pos);
+}
