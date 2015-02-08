@@ -31,8 +31,10 @@ public:
     cocos2d::ActionInterval* moveToWithAnimation(cocos2d::Vec2 pos);
     cocos2d::ActionInterval* removeWithAnimation();
     
+    //
+    static float getRemoveAnimationTime();
+    
     CC_SYNTHESIZE(StarType, m_type, Type)
-
 };
 
 #endif /* defined(__Stars__Star__) */

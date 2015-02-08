@@ -188,18 +188,24 @@ void StarLayer::onStarTouched(int row, int column)
     }
     
     // drop stars
-    for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
-        for (int rowIndex = i->second + 1; rowIndex < m_height; ++rowIndex) {
-            int columnIndex = i->first;
-            // reach top
-            if (! hasStarAtIndex(rowIndex, columnIndex)) {
-                break;
+    this->scheduleOnce(
+    [=] (float dt) {
+        for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
+            for (int rowIndex = i->second + 1; rowIndex < m_height; ++rowIndex) {
+                int columnIndex = i->first;
+                // reach top
+                if (! hasStarAtIndex(rowIndex, columnIndex)) {
+                    break;
+                }
+                // drop
+                size_t removedItemCount = touchedStarIndexes.count(columnIndex);
+                this->dropStar(rowIndex, columnIndex, removedItemCount);
             }
-            // drop
-            size_t removedItemCount = touchedStarIndexes.count(columnIndex);
-            this->dropStar(rowIndex, columnIndex, removedItemCount);
         }
-    }
+    },
+    Star::getRemoveAnimationTime(),
+    "DropStar"
+    );
 }
 
 void StarLayer::dropStar(int row, int column, size_t dropHeightCount)

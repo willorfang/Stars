@@ -42,12 +42,19 @@ void Star::setStarSize(cocos2d::Size size)
     this->setScaleY(size.height / contentSize.height);
 }
 
+const float m_removeAnimationTime = 0.1f;
+const float m_dropAnimationTime = 0.3f;
+
+float Star::getRemoveAnimationTime()
+{
+    return m_removeAnimationTime;
+}
+
 ActionInterval* Star::moveToWithAnimation(cocos2d::Vec2 pos)
 {
     ActionInterval* pRet = nullptr;
     
-    const float dt = 0.3f;
-    auto moveTo = MoveTo::create(dt, pos);
+    auto moveTo = MoveTo::create(m_dropAnimationTime, pos);
     pRet = EaseBackIn::create(moveTo);
     
     return pRet;
@@ -57,8 +64,7 @@ ActionInterval* Star::removeWithAnimation()
 {
     ActionInterval* pRet = nullptr;
     
-    const float dt = 0.1f;
-    auto scaleTo = ScaleTo::create(dt, 0.1);
+    auto scaleTo = ScaleTo::create(m_removeAnimationTime, 0.1f);
     auto callback = CallFunc::create(
         [this] () {
            this->removeFromParent();
