@@ -89,7 +89,8 @@ void StarLayer::addStar(int row, int column, Star* item)
 void StarLayer::removeStar(int row, int column)
 {
     if (m_starTable[row][column] != nullptr) {
-        this->removeChild(m_starTable[row][column]);
+        ActionInterval* action = m_starTable[row][column]->removeWithAnimation();
+        m_starTable[row][column]->runAction(action);
         m_starTable[row][column] = nullptr;
     }
 }
@@ -206,10 +207,9 @@ void StarLayer::dropStar(int row, int column, size_t dropHeightCount)
     // move item
     Star* item = m_starTable[row][column];
     Vec2 pos = item->getPosition() - Vec2(0, dropHeightCount * m_starSize.height);
-    item->moveToWithAnimation(pos);
+    item->runAction(item->moveToWithAnimation(pos));
     
     // update table
     m_starTable[row][column] = nullptr;
-    assert(m_starTable[row-dropHeightCount][column] == nullptr);
     m_starTable[row-dropHeightCount][column] = item;
 }

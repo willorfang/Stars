@@ -27,8 +27,9 @@ public:
     static Star* createInstance(StarType type);
     void setStarSize(cocos2d::Size size);
 
-    //
-    void moveToWithAnimation(cocos2d::Vec2 pos);
+    // animation
+    cocos2d::ActionInterval* moveToWithAnimation(cocos2d::Vec2 pos);
+    cocos2d::ActionInterval* removeWithAnimation();
     
     CC_SYNTHESIZE(StarType, m_type, Type)
 
