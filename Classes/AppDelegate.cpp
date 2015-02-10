@@ -1,6 +1,6 @@
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
-#include "StarLayer.h"
+#include "MainScene.h"
 
 USING_NS_CC;
 
@@ -40,9 +40,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     // create a scene. it's an autorelease object
 //    auto scene = HelloWorld::createScene();
-    auto scene = Scene::create();
-    auto layer = StarLayer::createInstance(12, 18);
-    scene->addChild(layer);
+    auto scene = MainScene::create();
 
     // run
     director->runWithScene(scene);

@@ -6,17 +6,20 @@
 //
 //
 #include <map>
-
+#include <SimpleAudioEngine.h>
 #include "StarLayer.h"
 #include "Star.h"
 
 USING_NS_CC;
 using namespace std;
+using namespace CocosDenshion;
 
 static const float s_leftMargin = 10;
 static const float s_rightMargin = 10;
 static const float s_bottomMargin = 10;
 static const float s_topMargin = 300;
+
+static const char* s_starRemoveEffect = "sound/jewelappear.wav";
 
 StarLayer* StarLayer::createInstance(int width, int height)
 {
@@ -196,6 +199,9 @@ void StarLayer::onStarTouched(int row, int column)
                 removedTopIndexes[columnIndex] = rowIndex;
             }
         }
+        
+        // play effect
+        SimpleAudioEngine::getInstance()->playEffect(s_starRemoveEffect);
     }
     
     // drop stars
