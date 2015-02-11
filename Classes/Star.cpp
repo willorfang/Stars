@@ -50,17 +50,24 @@ float Star::getRemoveAnimationTime()
     return m_removeAnimationTime;
 }
 
-ActionInterval* Star::moveToWithAnimation(cocos2d::Vec2 pos)
+void Star::moveToWithAnimation(cocos2d::Vec2 pos)
 {
     ActionInterval* pRet = nullptr;
+    m_moving = true;
     
     auto moveTo = MoveTo::create(m_dropAnimationTime, pos);
-    pRet = EaseBackIn::create(moveTo);
+    auto easeIn = EaseBackIn::create(moveTo);
+    auto callback = CallFunc::create(
+        [this] () {
+            m_moving = false;
+        }
+    );
     
-    return pRet;
+    pRet = Sequence::create(easeIn, callback, NULL);
+    this->runAction(pRet);
 }
 
-ActionInterval* Star::removeWithAnimation()
+void Star::removeWithAnimation()
 {
     ActionInterval* pRet = nullptr;
     
@@ -72,5 +79,5 @@ ActionInterval* Star::removeWithAnimation()
     );
     
     pRet = Sequence::create(scaleTo, callback, NULL);
-    return pRet;
+    this->runAction(pRet);
 }

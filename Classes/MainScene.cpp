@@ -19,7 +19,7 @@ static const int STAR_LAYER_ORDER = 1;
 void MainScene::onEnterTransitionDidFinish()
 {
     Scene::onEnterTransitionDidFinish();
-    SimpleAudioEngine::getInstance()->playBackgroundMusic(s_backgroundMusic);
+    SimpleAudioEngine::getInstance()->playBackgroundMusic(s_backgroundMusic, true);
 }
 
 void MainScene::onExit()
@@ -32,7 +32,7 @@ void MainScene::onExit()
 bool MainScene::init()
 {
     if (Scene::init()) {
-        m_starLayer = StarLayer::createInstance(10, 14);
+        m_starLayer = StarLayer::createInstance(14, 10);
         this->addChild(m_starLayer, STAR_LAYER_ORDER);
         
         return true;

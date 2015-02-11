@@ -6,6 +6,8 @@
 //
 //
 #include <map>
+#include <assert.h>
+
 #include <SimpleAudioEngine.h>
 #include "StarLayer.h"
 #include "Star.h"
@@ -21,17 +23,14 @@ static const float s_topMargin = 300;
 
 static const char* s_starRemoveEffect = "sound/jewelappear.wav";
 
-StarLayer* StarLayer::createInstance(int width, int height)
+StarLayer* StarLayer::createInstance(int rowCount, int columnCount)
 {
     auto pRet = create();
     
     // put stars
     if (pRet != nullptr) {
-        // touch
-        pRet->registerTouchListener();
-        
         // init star table's size
-        pRet->initStarTableSize(width, height);
+        pRet->initStarTableSize(rowCount, columnCount);
         
         // view size
         auto origin = Director::getInstance()->getVisibleOrigin() + Vec2(s_leftMargin, s_bottomMargin);
@@ -40,13 +39,13 @@ StarLayer* StarLayer::createInstance(int width, int height)
         // star size
         auto size = Director::getInstance()->getVisibleSize();
         Size starSize;
-        starSize.width = (size.width - s_leftMargin - s_rightMargin) / width;
+        starSize.width = (size.width - s_leftMargin - s_rightMargin) / columnCount;
         starSize.height = starSize.width;
         pRet->setStarSize(starSize);
         
         // add stars
-        for (int i=0; i<height; ++i) {
-            for (int j=0; j<width; ++j) {
+        for (int i=0; i<=rowCount*0.5; ++i) {
+            for (int j=0; j<columnCount; ++j) {
                 // get a random type
                 auto type = static_cast<Star::StarType>(arc4random() % Star::StarTypeCount);
                 //
@@ -63,6 +62,19 @@ StarLayer* StarLayer::createInstance(int width, int height)
 #ifdef STAR_DEBUG
         pRet->setDebugNode();
 #endif
+        
+        // touch
+        pRet->registerTouchListener();
+        
+        // schedule droping stars
+        pRet->schedule(
+            CC_SCHEDULE_SELECTOR(StarLayer::createRandomStar),
+            2.0f);
+        pRet->schedule(
+            CC_SCHEDULE_SELECTOR(StarLayer::updateDropingStar),
+            1.0f,
+            CC_REPEAT_FOREVER,
+            1.0f);
     }
     
     return pRet;
@@ -76,36 +88,38 @@ void StarLayer::setDebugNode()
 }
 #endif
 
-void StarLayer::initStarTableSize(int width, int height)
+void StarLayer::initStarTableSize(int rowCount, int columnCount)
 {
-    m_width = width;
-    m_height = height;
+    m_rowCount = rowCount;
+    m_columnCount = columnCount;
     //
-    m_starTable.resize(height);
+    m_starTable.resize(rowCount);
     for (int i=0; i<m_starTable.size(); ++i) {
-        m_starTable[i].resize(width);
+        m_starTable[i].resize(columnCount);
     }
 }
 
-void StarLayer::addStar(int row, int column, Star* item)
+void StarLayer::addStar(int rowIndex, int columnIndex, Star* item)
 {
     if (item != nullptr) {
         this->addChild(item);
         //
-        if (m_starTable[row][column] != nullptr) {
-            this->removeChild(m_starTable[row][column]);
+        if (m_starTable[rowIndex][columnIndex] != nullptr) {
+            this->removeChild(m_starTable[rowIndex][columnIndex]);
+            m_starIndexTable.erase(m_starTable[rowIndex][columnIndex]);
         }
-        m_starTable[row][column] = item;
+        m_starTable[rowIndex][columnIndex] = item;
+        m_starIndexTable[item] = make_pair(rowIndex, columnIndex);
     }
 
 }
 
-void StarLayer::removeStar(int row, int column)
+void StarLayer::removeStar(int rowIndex, int columnIndex)
 {
-    if (m_starTable[row][column] != nullptr) {
-        ActionInterval* action = m_starTable[row][column]->removeWithAnimation();
-        m_starTable[row][column]->runAction(action);
-        m_starTable[row][column] = nullptr;
+    if (m_starTable[rowIndex][columnIndex] != nullptr) {
+        m_starTable[rowIndex][columnIndex]->removeWithAnimation();
+        m_starIndexTable.erase(m_starTable[rowIndex][columnIndex]);
+        m_starTable[rowIndex][columnIndex] = nullptr;
     }
 }
 
@@ -118,13 +132,16 @@ void StarLayer::registerTouchListener()
         // get pos
         Point pos = this->convertToNodeSpace(touch->getLocation());
         // get node index
-        int column, row;
-        column = (pos.x - m_origin.x) / m_starSize.width;
-        row = (pos.y - m_origin.y) / m_starSize.height;
-        if (column > m_width-1 || row > m_height-1) {
+        int columnIndex, rowIndex;
+        columnIndex = (pos.x - m_origin.x) / m_starSize.width;
+        rowIndex = (pos.y - m_origin.y) / m_starSize.height;
+        if (rowIndex > m_rowCount-1
+            || rowIndex < 0
+            || columnIndex > m_columnCount-1
+            || columnIndex < 0) {
             return false;
         } else {
-            this->onStarTouched(row, column);
+            this->onStarTouched(rowIndex, columnIndex);
             return true;
         }
     };
@@ -132,10 +149,11 @@ void StarLayer::registerTouchListener()
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 }
 
+// whether a <key ,value> item is contained in a multimap or not
 static bool isMapItemExist(const multimap<int, int>& mapItem, int key, int value) {
     using ValueRange = pair<multimap<int, int>::const_iterator, multimap<int, int>::const_iterator>;
     ValueRange range = mapItem.equal_range(key);
-    for (auto i=range.first; i!=range.second; ++i) {
+    for (auto i = range.first; i != range.second; ++i) {
         if (i->second == value) {
             return true;
         }
@@ -143,49 +161,49 @@ static bool isMapItemExist(const multimap<int, int>& mapItem, int key, int value
     return false;
 }
 
-void StarLayer::findSameStars(multimap<int, int>& mapItem, int row, int column) {
-    mapItem.insert(make_pair(column, row));
+void StarLayer::findSameStars(multimap<int, int>& mapItem, int rowIndex, int columnIndex) {
+    mapItem.insert(make_pair(columnIndex, rowIndex));
     // left
-    if (column > 0
-        && !isMapItemExist(mapItem, column-1, row)
-        && m_starTable[row][column-1] != nullptr
-        && m_starTable[row][column-1]->getType() == m_starTable[row][column]->getType()) {
-        findSameStars(mapItem, row, column-1);
+    if (columnIndex > 0
+        && !isMapItemExist(mapItem, columnIndex-1, rowIndex)
+        && m_starTable[rowIndex][columnIndex-1] != nullptr
+        && m_starTable[rowIndex][columnIndex-1]->getType() == m_starTable[rowIndex][columnIndex]->getType()) {
+        findSameStars(mapItem, rowIndex, columnIndex-1);
     }
     // right
-    if (column+1 < m_width
-        && !isMapItemExist(mapItem, column+1, row)
-        && m_starTable[row][column+1] != nullptr
-        && m_starTable[row][column+1]->getType() == m_starTable[row][column]->getType()) {
-        findSameStars(mapItem, row, column+1);
+    if (columnIndex+1 < m_columnCount
+        && !isMapItemExist(mapItem, columnIndex+1, rowIndex)
+        && m_starTable[rowIndex][columnIndex+1] != nullptr
+        && m_starTable[rowIndex][columnIndex+1]->getType() == m_starTable[rowIndex][columnIndex]->getType()) {
+        findSameStars(mapItem, rowIndex, columnIndex+1);
     }
     // bottom
-    if (row > 0
-        && !isMapItemExist(mapItem, column, row-1)
-        && m_starTable[row-1][column] != nullptr
-        && m_starTable[row-1][column]->getType() == m_starTable[row][column]->getType()) {
-        findSameStars(mapItem, row-1, column);
+    if (rowIndex > 0
+        && !isMapItemExist(mapItem, columnIndex, rowIndex-1)
+        && m_starTable[rowIndex-1][columnIndex] != nullptr
+        && m_starTable[rowIndex-1][columnIndex]->getType() == m_starTable[rowIndex][columnIndex]->getType()) {
+        findSameStars(mapItem, rowIndex-1, columnIndex);
     }
     // top
-    if (row+1 < m_height
-        && !isMapItemExist(mapItem, column, row+1)
-        && m_starTable[row+1][column] != nullptr
-        && m_starTable[row+1][column]->getType() == m_starTable[row][column]->getType()) {
-        findSameStars(mapItem, row+1, column);
+    if (rowIndex+1 < m_rowCount
+        && !isMapItemExist(mapItem, columnIndex, rowIndex+1)
+        && m_starTable[rowIndex+1][columnIndex] != nullptr
+        && m_starTable[rowIndex+1][columnIndex]->getType() == m_starTable[rowIndex][columnIndex]->getType()) {
+        findSameStars(mapItem, rowIndex+1, columnIndex);
     }
 };
 
-void StarLayer::onStarTouched(int row, int column)
+void StarLayer::onStarTouched(int rowIndex, int columnIndex)
 {
     // if there is no star
-    if (!hasStarAtIndex(row, column)) {
+    if (!hasStarAtIndex(rowIndex, columnIndex)) {
         return;
     }
     
-    // <column, row> need to be removed
+    // <columnIndex, rowIndex> need to be removed
     multimap<int, int> touchedStarIndexes;
     map<int, int> removedTopIndexes;
-    this->findSameStars(touchedStarIndexes, row, column);
+    this->findSameStars(touchedStarIndexes, rowIndex, columnIndex);
     
     // remove from graph scene
     if (touchedStarIndexes.size() > 1) {
@@ -208,7 +226,7 @@ void StarLayer::onStarTouched(int row, int column)
     this->scheduleOnce(
     [=] (float dt) {
         for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
-            for (int rowIndex = i->second + 1; rowIndex < m_height; ++rowIndex) {
+            for (int rowIndex = i->second + 1; rowIndex < m_rowCount; ++rowIndex) {
                 int columnIndex = i->first;
                 // reach top
                 if (! hasStarAtIndex(rowIndex, columnIndex)) {
@@ -216,15 +234,15 @@ void StarLayer::onStarTouched(int row, int column)
                 }
                 // drop
                 size_t removedItemCount = touchedStarIndexes.count(columnIndex);
-                this->dropStar(rowIndex, columnIndex, removedItemCount);
+                this->dropStar(m_starTable[rowIndex][columnIndex], (int)removedItemCount);
             }
         }
         
 #ifdef STAR_DEBUG
         m_debugNode->clear();
         // draw rect for null position
-        for (int i=0; i<m_height; ++i) {
-            for (int j=0; j<m_width; ++j) {
+        for (int i=0; i<m_rowCount; ++i) {
+            for (int j=0; j<m_columnCount; ++j) {
                 if (!hasStarAtIndex(i, j)) {
                     Vec2 pos = m_origin + Vec2((j+0.5)*m_starSize.width, (i+0.5)*m_starSize.height);
                     m_debugNode->drawDot(pos, 15, Color4F(1, 0, 0, 0.5));
@@ -239,14 +257,79 @@ void StarLayer::onStarTouched(int row, int column)
     );
 }
 
-void StarLayer::dropStar(int row, int column, size_t dropHeightCount)
+bool StarLayer::dropStar(Star *item, int dropHeightCount)
 {
-    // move item
-    Star* item = m_starTable[row][column];
-    Vec2 pos = item->getPosition() - Vec2(0, dropHeightCount * m_starSize.height);
-    item->runAction(item->moveToWithAnimation(pos));
+    int rowIndex, columnIndex;
+    this->getIndexForStar(item, rowIndex, columnIndex);
     
-    // update table
-    m_starTable[row][column] = nullptr;
-    m_starTable[row-dropHeightCount][column] = item;
+    if (item->getMoving()
+        || hasStarAtIndex(rowIndex - dropHeightCount, columnIndex)) {
+        return false;
+    } else {
+        // move item
+        Vec2 pos = item->getPosition() - Vec2(0, dropHeightCount * m_starSize.height);
+        item->moveToWithAnimation(pos);
+        
+        // update table
+        m_starTable[rowIndex][columnIndex] = nullptr;
+        m_starTable[rowIndex - dropHeightCount][columnIndex] = item;
+        m_starIndexTable[item] = make_pair(rowIndex - dropHeightCount, columnIndex);
+        return true;
+    }
+}
+
+void StarLayer::createRandomStar(float dt)
+{
+    // get a random type
+    auto type = static_cast<Star::StarType>(arc4random() % Star::StarTypeCount);
+    //
+    auto item = Star::createInstance(type);
+    item->setStarSize(m_starSize);
+    // get a random width index
+    const int columnIndex = arc4random() % m_columnCount;
+    const int rowIndex = m_rowCount - 1;
+    Vec2 pos;
+    pos.x = m_origin.x + (columnIndex+0.5) * m_starSize.width;
+    pos.y = m_origin.y + (rowIndex+0.5) * m_starSize.height;
+    item->setPosition(pos);
+    
+    //
+    this->addStar(rowIndex, columnIndex, item);
+    m_dropingStar.push_back(item);
+}
+
+bool StarLayer::getIndexForStar(Star* item, int& rowIndex, int& columnIndex)
+{
+    if (m_starIndexTable.count(item) == 1) {
+        auto index = m_starIndexTable[item];
+        rowIndex = index.first;
+        columnIndex = index.second;
+        return true;
+    }
+    return false;
+}
+
+bool StarLayer::getIndexForPosition(const cocos2d::Vec2& pos, int& rowIndex, int& columnIndex)
+{
+    columnIndex = (pos.x - m_origin.x) / m_starSize.width;
+    rowIndex = (pos.y - m_origin.y) / m_starSize.height;
+    
+    return (rowIndex>=0) && (columnIndex>=0);
+}
+
+void StarLayer::updateDropingStar(float dt)
+{
+    for (auto i = m_dropingStar.begin(); i != m_dropingStar.end(); ) {
+        // check its bottom neighbor
+        int rowIndex, columnIndex;
+        this->getIndexForStar(*i, rowIndex, columnIndex);
+        if (rowIndex > 0
+            && ! this->hasStarAtIndex(rowIndex-1, columnIndex)) {
+            // drop by 1
+            this->dropStar(*i, 1);
+            ++i;
+        } else {
+            i = m_dropingStar.erase(i);
+        }
+    }
 }

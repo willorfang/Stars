@@ -28,13 +28,14 @@ public:
     void setStarSize(cocos2d::Size size);
 
     // animation
-    cocos2d::ActionInterval* moveToWithAnimation(cocos2d::Vec2 pos);
-    cocos2d::ActionInterval* removeWithAnimation();
+    void moveToWithAnimation(cocos2d::Vec2 pos);
+    void removeWithAnimation();
     
     //
     static float getRemoveAnimationTime();
     
     CC_SYNTHESIZE(StarType, m_type, Type)
+    CC_SYNTHESIZE_READONLY(bool, m_moving, Moving)
 };
 
 #endif /* defined(__Stars__Star__) */

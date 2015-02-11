@@ -11,7 +11,7 @@
 
 #include "cocos2d.h"
 
-#define STAR_DEBUG
+//#define STAR_DEBUG
 
 class Star;
 
@@ -19,32 +19,38 @@ class StarLayer : public cocos2d::Layer
 {
 public:
     CREATE_FUNC(StarLayer)
-    static StarLayer* createInstance(int width, int height);
+    static StarLayer* createInstance(int rowCount, int columnCount);
     
     // origin is left-bottom
-    void initStarTableSize(int width, int height);
-    void addStar(int row, int column, Star* item);
-    void removeStar(int row, int column);
+    void initStarTableSize(int rowCount, int columnCount);
+    void addStar(int rowIndex, int columnIndex, Star* item);
+    void removeStar(int rowIndex, int columnIndex);
     
     // the number of stars
-    CC_SYNTHESIZE(int, m_width, Width)
-    CC_SYNTHESIZE(int, m_height, Height)
+    CC_SYNTHESIZE(int, m_rowCount, RowCount)
+    CC_SYNTHESIZE(int, m_columnCount, ColumnCount)
     
     // geometry info
     CC_SYNTHESIZE(cocos2d::Size, m_starSize, StarSize)
     CC_SYNTHESIZE(cocos2d::Vec2, m_origin, Origin)
     
+public:
     // touch process
     void registerTouchListener();
-    void onStarTouched(int row, int column);
-    void findSameStars(std::multimap<int, int>& mapItem, int row, int column);
+    void onStarTouched(int rowIndex, int columnIndex);
+    void findSameStars(std::multimap<int, int>& mapItem, int rowIndex, int columnIndex);
     
-    bool hasStarAtIndex(int row, int column)
+    bool hasStarAtIndex(int rowIndex, int columnIndex)
     {
-        return m_starTable[row][column] != nullptr;
+        return m_starTable[rowIndex][columnIndex] != nullptr;
     }
     
-    void dropStar(int row, int column, size_t dropHeightCount);
+    bool dropStar(Star* item, int dropHeightCount);
+    void createRandomStar(float dt);
+    bool getIndexForStar(Star* item, int& rowIndex, int& columnIndex);
+    bool getIndexForPosition(const cocos2d::Vec2& pos, int& rowIndex, int& columnIndex);
+    
+    void updateDropingStar(float dt);
     
 #ifdef STAR_DEBUG
     void setDebugNode();
@@ -52,6 +58,8 @@ public:
     
 private:
     std::vector< std::vector<Star*> > m_starTable;
+    std::map< Star*, std::pair<int, int> > m_starIndexTable;
+    std::vector<Star*> m_dropingStar;
 #ifdef STAR_DEBUG
     cocos2d::DrawNode* m_debugNode;
 #endif
