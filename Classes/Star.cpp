@@ -26,6 +26,7 @@ Star* Star::createInstance(StarType type)
     //
     if (pRet && pRet->initWithFile(s_StarIconArray[type])) {
         pRet->setType(type);
+        pRet->setMoving(false);
         pRet->autorelease();
         return pRet;
     } else {
@@ -48,6 +49,11 @@ const float m_dropAnimationTime = 0.3f;
 float Star::getRemoveAnimationTime()
 {
     return m_removeAnimationTime;
+}
+
+float Star::getMoveAnimationTime()
+{
+    return m_dropAnimationTime;
 }
 
 void Star::moveToWithAnimation(cocos2d::Vec2 pos)
