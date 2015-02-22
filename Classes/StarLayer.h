@@ -19,6 +19,7 @@ class StarLayer : public cocos2d::Layer
 {
 public:
     CREATE_FUNC(StarLayer)
+    explicit StarLayer() : m_touchEnabled(true) {}
     static StarLayer* createInstance(int rowCount, int columnCount);
     
     // origin is left-bottom
@@ -34,7 +35,7 @@ public:
     CC_SYNTHESIZE(cocos2d::Size, m_starSize, StarSize)
     CC_SYNTHESIZE(cocos2d::Vec2, m_origin, Origin)
     
-public:
+private:
     // touch process
     void registerTouchListener();
     void onStarTouched(int rowIndex, int columnIndex);
@@ -60,6 +61,7 @@ private:
     std::vector< std::vector<Star*> > m_starTable;
     std::map< Star*, std::pair<int, int> > m_starIndexTable;
     std::vector<Star*> m_dropingStar;
+    bool m_touchEnabled;
 #ifdef STAR_DEBUG
     cocos2d::DrawNode* m_debugNode;
 #endif
