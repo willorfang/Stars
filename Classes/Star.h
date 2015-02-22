@@ -33,10 +33,9 @@ public:
     
     //
     static float getRemoveAnimationTime();
-    static float getMoveAnimationTime();
     
     CC_SYNTHESIZE(StarType, m_type, Type)
-    CC_SYNTHESIZE(bool, m_moving, Moving)
+    CC_SYNTHESIZE_READONLY(bool, m_moving, Moving)
 };
 
 #endif /* defined(__Stars__Star__) */

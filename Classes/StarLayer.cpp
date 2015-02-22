@@ -67,7 +67,6 @@ StarLayer* StarLayer::createInstance(int rowCount, int columnCount)
         pRet->registerTouchListener();
         
         // schedule droping stars
-        pRet->scheduleUpdate();
         pRet->schedule(
             CC_SCHEDULE_SELECTOR(StarLayer::createRandomStar),
             2.0f);
@@ -96,7 +95,7 @@ void StarLayer::initStarTableSize(int rowCount, int columnCount)
     //
     m_starTable.resize(rowCount);
     for (int i=0; i<m_starTable.size(); ++i) {
-        m_starTable[i] = vector<Star*>(columnCount, nullptr);
+        m_starTable[i].resize(columnCount);
     }
 }
 
@@ -197,7 +196,7 @@ void StarLayer::findSameStars(multimap<int, int>& mapItem, int rowIndex, int col
 void StarLayer::onStarTouched(int rowIndex, int columnIndex)
 {
     // if there is no star
-    if (!m_touchEnabled || !hasStarAtIndex(rowIndex, columnIndex)) {
+    if (!hasStarAtIndex(rowIndex, columnIndex)) {
         return;
     }
     
@@ -208,9 +207,6 @@ void StarLayer::onStarTouched(int rowIndex, int columnIndex)
     
     // remove from graph scene
     if (touchedStarIndexes.size() > 1) {
-        // disable touch
-        m_touchEnabled = false;
-        
         for (auto i = touchedStarIndexes.begin(); i != touchedStarIndexes.end(); ++i) {
             int rowIndex = i->second;
             int columnIndex = i->first;
@@ -224,37 +220,41 @@ void StarLayer::onStarTouched(int rowIndex, int columnIndex)
         
         // play effect
         SimpleAudioEngine::getInstance()->playEffect(s_starRemoveEffect);
-    
-        // drop stars
-        this->scheduleOnce(
-                           [=] (float dt) {
-                               for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
-                                   for (int rowIndex = i->second + 1; rowIndex < m_rowCount; ++rowIndex) {
-                                       int columnIndex = i->first;
-                                       // reach top
-                                       if (! hasStarAtIndex(rowIndex, columnIndex)) {
-                                           break;
-                                       }
-                                       // drop
-                                       size_t removedItemCount = touchedStarIndexes.count(columnIndex);
-                                       this->dropStar(m_starTable[rowIndex][columnIndex], (int)removedItemCount);
-                                   }
-                               }
-                               
-                               // enable touch
-                               this->scheduleOnce(
-                                                  [this] (float dt) {
-                                                      m_touchEnabled = true;
-                                                  },
-                                                  Star::getMoveAnimationTime(),
-                                                  "RecoverTouch"
-                                                  );
-                           },
-                           Star::getRemoveAnimationTime(),
-                           "DropStar"
-                           );
-    
     }
+    
+    // drop stars
+    this->scheduleOnce(
+    [=] (float dt) {
+        for (auto i = removedTopIndexes.begin(); i != removedTopIndexes.end(); ++i) {
+            for (int rowIndex = i->second + 1; rowIndex < m_rowCount; ++rowIndex) {
+                int columnIndex = i->first;
+                // reach top
+                if (! hasStarAtIndex(rowIndex, columnIndex)) {
+                    break;
+                }
+                // drop
+                size_t removedItemCount = touchedStarIndexes.count(columnIndex);
+                this->dropStar(m_starTable[rowIndex][columnIndex], (int)removedItemCount);
+            }
+        }
+        
+#ifdef STAR_DEBUG
+        m_debugNode->clear();
+        // draw rect for null position
+        for (int i=0; i<m_rowCount; ++i) {
+            for (int j=0; j<m_columnCount; ++j) {
+                if (!hasStarAtIndex(i, j)) {
+                    Vec2 pos = m_origin + Vec2((j+0.5)*m_starSize.width, (i+0.5)*m_starSize.height);
+                    m_debugNode->drawDot(pos, 15, Color4F(1, 0, 0, 0.5));
+                }
+            }
+        }
+#endif
+        
+    },
+    Star::getRemoveAnimationTime(),
+    "DropStar"
+    );
 }
 
 bool StarLayer::dropStar(Star *item, int dropHeightCount)
@@ -262,12 +262,18 @@ bool StarLayer::dropStar(Star *item, int dropHeightCount)
     int rowIndex, columnIndex;
     this->getIndexForStar(item, rowIndex, columnIndex);
     
-    if (item->getMoving()) {
+    if (item->getMoving()
+        || hasStarAtIndex(rowIndex - dropHeightCount, columnIndex)) {
         return false;
     } else {
         // move item
         Vec2 pos = item->getPosition() - Vec2(0, dropHeightCount * m_starSize.height);
         item->moveToWithAnimation(pos);
+        
+        // update table
+        m_starTable[rowIndex][columnIndex] = nullptr;
+        m_starTable[rowIndex - dropHeightCount][columnIndex] = item;
+        m_starIndexTable[item] = make_pair(rowIndex - dropHeightCount, columnIndex);
         return true;
     }
 }
@@ -316,46 +322,14 @@ void StarLayer::updateDropingStar(float dt)
     for (auto i = m_dropingStar.begin(); i != m_dropingStar.end(); ) {
         // check its bottom neighbor
         int rowIndex, columnIndex;
-        bool isExist = this->getIndexForStar(*i, rowIndex, columnIndex);
-        if (isExist
-            && rowIndex > 0
+        this->getIndexForStar(*i, rowIndex, columnIndex);
+        if (rowIndex > 0
             && ! this->hasStarAtIndex(rowIndex-1, columnIndex)) {
             // drop by 1
             this->dropStar(*i, 1);
             ++i;
         } else {
             i = m_dropingStar.erase(i);
-        }
-    }
-}
-
-void StarLayer::update(float dt)
-{
-#ifdef STAR_DEBUG
-    m_debugNode->clear();
-#endif
-    
-    for (int rowIndex = 0; rowIndex < m_rowCount; ++rowIndex) {
-        for (int columnIndex = 0; columnIndex < m_columnCount; ++columnIndex) {
-            // update table
-            Star* item = m_starTable[rowIndex][columnIndex];
-            if (item != nullptr && item->getMoving()) {
-                int updatedRowIndex, updatedColumnIdex;
-                this->getIndexForPosition(item->getPosition(), updatedRowIndex, updatedColumnIdex);
-                if (updatedRowIndex != rowIndex
-                    || updatedColumnIdex != columnIndex) {
-                    m_starTable[rowIndex][columnIndex] = nullptr;
-                    m_starTable[updatedRowIndex][updatedColumnIdex] = item;
-                    m_starIndexTable[item] = make_pair(updatedRowIndex, updatedColumnIdex);
-                }
-            }
-#ifdef STAR_DEBUG
-            // draw rect for null position
-            if (item == nullptr) {
-                Vec2 pos = m_origin + Vec2((columnIndex+0.5)*m_starSize.width, (rowIndex+0.5)*m_starSize.height);
-                m_debugNode->drawDot(pos, 15, Color4F(1, 0, 0, 0.5));
-            }
-#endif
         }
     }
 }
