@@ -11,7 +11,7 @@
 USING_NS_CC;
 using namespace std;
 
-static vector<string> s_StarIconArray= {
+static vector<string> s_StarIconArray = {
     "res/StarType0.jpg",
     "res/StarType1.jpg",
     "res/StarType2.jpg",

@@ -19,8 +19,21 @@ class StarLayer : public cocos2d::Layer
 {
 public:
     CREATE_FUNC(StarLayer)
-    explicit StarLayer() : m_touchEnabled(true) {}
+    explicit StarLayer()
+        : m_touchEnabled(true),
+          m_background(nullptr)
+    {
+#ifdef STAR_DEBUG
+        m_debugNode = nullptr;
+#endif
+    }
     static StarLayer* createInstance(int rowCount, int columnCount);
+    
+    enum class BackgroundType {
+        StarShine,
+        MaxValue
+    };
+    void setBackgroundType(BackgroundType type);
     
     // origin is left-bottom
     void initStarTableSize(int rowCount, int columnCount);
@@ -61,6 +74,7 @@ private:
     std::vector< std::vector<Star*> > m_starTable;
     std::map< Star*, std::pair<int, int> > m_starIndexTable;
     std::vector<Star*> m_dropingStar;
+    cocos2d::Sprite* m_background;
     bool m_touchEnabled;
 #ifdef STAR_DEBUG
     cocos2d::DrawNode* m_debugNode;

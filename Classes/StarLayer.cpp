@@ -21,7 +21,15 @@ static const float s_rightMargin = 10;
 static const float s_bottomMargin = 10;
 static const float s_topMargin = 300;
 
+static const int CHILD_ORDER_BACKGROUND = 0;
+static const int CHILD_ORDER_STAR       = 1;
+static const int CHILD_ORDER_DEBUG      = 1000;
+
 static const char* s_starRemoveEffect = "sound/jewelappear.wav";
+
+static vector<string> s_backgroundArray = {
+    "res/StarShine.png",
+};
 
 StarLayer* StarLayer::createInstance(int rowCount, int columnCount)
 {
@@ -84,7 +92,7 @@ StarLayer* StarLayer::createInstance(int rowCount, int columnCount)
 void StarLayer::setDebugNode()
 {
     m_debugNode = DrawNode::create();
-    this->addChild(m_debugNode, 1000);
+    this->addChild(m_debugNode, CHILD_ORDER_DEBUG);
 }
 #endif
 
@@ -102,7 +110,7 @@ void StarLayer::initStarTableSize(int rowCount, int columnCount)
 void StarLayer::addStar(int rowIndex, int columnIndex, Star* item)
 {
     if (item != nullptr) {
-        this->addChild(item);
+        this->addChild(item, CHILD_ORDER_STAR);
         //
         if (m_starTable[rowIndex][columnIndex] != nullptr) {
             this->removeChild(m_starTable[rowIndex][columnIndex]);
@@ -345,5 +353,23 @@ void StarLayer::updateDropingStar(float dt)
         } else {
             i = m_dropingStar.erase(i);
         }
+    }
+}
+
+void StarLayer::setBackgroundType(BackgroundType type)
+{
+    if (type < BackgroundType::MaxValue) {
+        if (m_background && m_background->getParent()) {
+            m_background->removeFromParent();
+        }
+        int index = static_cast<int>(type);
+        m_background = Sprite::create(s_backgroundArray[index]);
+        auto screenSize = Director::getInstance()->getVisibleSize();
+        auto imageSize = m_background->getContentSize();
+        float scaleX = screenSize.width/imageSize.width;
+        float scaleY = screenSize.height/imageSize.height;
+        m_background->setScale(max(scaleX, scaleY));
+        m_background->setPosition(Vec2(screenSize.width/2, screenSize.height/2));
+        this->addChild(m_background, CHILD_ORDER_BACKGROUND);
     }
 }

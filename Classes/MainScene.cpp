@@ -14,7 +14,7 @@ using namespace CocosDenshion;
 
 static const char* s_backgroundMusic = "sound/garden.mp3";
 
-static const int STAR_LAYER_ORDER = 1;
+static const int CHILD_ORDER_STAR_LAYER = 1;
 
 void MainScene::onEnterTransitionDidFinish()
 {
@@ -33,7 +33,8 @@ bool MainScene::init()
 {
     if (Scene::init()) {
         m_starLayer = StarLayer::createInstance(14, 10);
-        this->addChild(m_starLayer, STAR_LAYER_ORDER);
+        m_starLayer->setBackgroundType(StarLayer::BackgroundType::StarShine);
+        this->addChild(m_starLayer, CHILD_ORDER_STAR_LAYER);
         
         return true;
     }
