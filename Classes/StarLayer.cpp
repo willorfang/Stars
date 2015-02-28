@@ -7,10 +7,12 @@
 //
 #include <map>
 #include <assert.h>
+#include <algorithm>
 
 #include <SimpleAudioEngine.h>
 #include "StarLayer.h"
 #include "Star.h"
+#include "ScoreLayer.h"
 
 USING_NS_CC;
 using namespace std;
@@ -23,9 +25,11 @@ static const float s_topMargin = 300;
 
 static const int CHILD_ORDER_BACKGROUND = 0;
 static const int CHILD_ORDER_STAR       = 1;
+static const int CHILD_ORDER_SCORE      = 2;
 static const int CHILD_ORDER_DEBUG      = 1000;
 
 static const char* s_starRemoveEffect = "sound/jewelappear.wav";
+static const string s_fontFile = "fonts/arial-unicode-26.fnt";
 
 static vector<string> s_backgroundArray = {
     "res/StarShine.png",
@@ -218,20 +222,27 @@ void StarLayer::onStarTouched(int rowIndex, int columnIndex)
     if (touchedStarIndexes.size() > 1) {
         // disable touch
         m_touchEnabled = false;
+        vector<Vec2> removeStarArray;
         
         for (auto i = touchedStarIndexes.begin(); i != touchedStarIndexes.end(); ++i) {
             int rowIndex = i->second;
             int columnIndex = i->first;
+            removeStarArray.push_back(m_starTable[rowIndex][columnIndex]->getPosition());
+            //
             this->removeStar(rowIndex, columnIndex);
             // find max row
             if (removedTopIndexes.count(columnIndex) == 0
                 || removedTopIndexes[columnIndex] < rowIndex) {
                 removedTopIndexes[columnIndex] = rowIndex;
             }
+            
         }
         
         // play effect
         SimpleAudioEngine::getInstance()->playEffect(s_starRemoveEffect);
+        
+        // update scores
+        this->runAddScoreAnimation(removeStarArray);
         
         // drop stars
         this->scheduleOnce(
@@ -371,5 +382,44 @@ void StarLayer::setBackgroundType(BackgroundType type)
         m_background->setScale(max(scaleX, scaleY));
         m_background->setPosition(Vec2(screenSize.width/2, screenSize.height/2));
         this->addChild(m_background, CHILD_ORDER_BACKGROUND);
+    }
+}
+
+void StarLayer::runAddScoreAnimation(vector<Vec2> starPosArray)
+{
+    const float dt = 1.0f;
+    const Vec2 destPos = m_scoreLayer->getScorePos();
+    
+    float scaleValue = 1.0f;
+    int scoreValue = 5;
+    int totalScoreValue = 0;
+    for(int i=0; i<starPosArray.size(); ++i) {
+        totalScoreValue += scoreValue;
+        // label
+        auto label = Label::createWithBMFont(s_fontFile, to_string(scoreValue));
+        label->setPosition(starPosArray[i]);
+        label->setScale(scaleValue);
+        this->addChild(label, CHILD_ORDER_SCORE);
+        // action
+        auto moveTo = MoveTo::create(dt, destPos);
+        auto scaleTo = ScaleTo::create(dt, 0.3f);
+        auto callback = CallFunc::create(
+            [=] () {
+                label->removeFromParent();
+                if (i >= starPosArray.size() - 1) {
+                    m_scoreLayer->setScore(m_scoreLayer->getScore() + totalScoreValue);
+                }
+            }
+        );
+        auto action = Spawn::create(moveTo, scaleTo, nullptr);
+        auto easeIn = EaseIn::create(action, 3.0f);
+        auto seq = Sequence::create(easeIn, callback, nullptr);
+        
+        label->runAction(seq);
+        
+        //
+        scaleValue += 0.2f;
+        scaleValue = min(scaleValue, 2.0f);
+        scoreValue += 10;
     }
 }

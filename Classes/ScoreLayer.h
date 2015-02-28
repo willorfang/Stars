@@ -25,10 +25,18 @@ public:
     
     virtual bool init() override;
     
-    CC_SYNTHESIZE(int, m_score, Score)
-    CC_SYNTHESIZE(int, m_target, Target)
-    CC_SYNTHESIZE(int, m_best, Best)
-    CC_SYNTHESIZE(int, m_stage, Stage)
+    void setScore(int value);
+    void setTarget(int value);
+    void setBest(int value);
+    void setStage(int value);
+    cocos2d::Vec2 getScorePos() const;
+    CC_SYNTHESIZE_READONLY(int, m_score, Score)
+    CC_SYNTHESIZE_READONLY(int, m_target, Target)
+    CC_SYNTHESIZE_READONLY(int, m_best, Best)
+    CC_SYNTHESIZE_READONLY(int, m_stage, Stage)
+    
+private:
+    void runUpdateAnimation(cocos2d::Label* label);
     
 private:
     cocos2d::Label* m_scoreLabel;

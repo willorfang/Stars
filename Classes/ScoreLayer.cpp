@@ -76,3 +76,51 @@ bool ScoreLayer::init()
     }
     return false;
 }
+
+void ScoreLayer::setScore(int value)
+{
+    m_score = value;
+    m_scoreLabel->setString(to_string(value));
+    this->runUpdateAnimation(m_scoreLabel);
+}
+
+void ScoreLayer::setTarget(int value)
+{
+    m_target = value;
+    m_targetLabel->setString(to_string(value));
+}
+
+void ScoreLayer::setBest(int value)
+{
+    m_best = value;
+    m_bestLabel->setString(to_string(value));
+}
+
+void ScoreLayer::setStage(int value)
+{
+    m_stage = value;
+    m_stageLabel->setString(to_string(value));
+}
+
+void ScoreLayer::runUpdateAnimation(cocos2d::Label *label)
+{
+    // reset
+    label->stopAllActions();
+    label->setScale(1);
+    
+    //
+    const float dt = 0.2f;
+    const float scaleValue = 1.5f;
+    
+    auto scaleIn = ScaleBy::create(dt, scaleValue);
+    auto scaleOut = ScaleBy::create(dt, 1/scaleValue);
+    auto seq = Sequence::create(scaleIn, scaleOut, nullptr);
+    label->runAction(seq);
+}
+
+Vec2 ScoreLayer::getScorePos() const
+{
+    Vec2 pos = m_scoreLabel->getPosition();
+    pos.x += m_scoreLabel->getContentSize().width / 2;
+    return pos;
+}

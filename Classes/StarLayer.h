@@ -14,6 +14,7 @@
 //#define STAR_DEBUG
 
 class Star;
+class ScoreLayer;
 
 class StarLayer : public cocos2d::Layer
 {
@@ -21,7 +22,8 @@ public:
     CREATE_FUNC(StarLayer)
     explicit StarLayer()
         : m_touchEnabled(true),
-          m_background(nullptr)
+          m_background(nullptr),
+          m_scoreLayer(nullptr)
     {
 #ifdef STAR_DEBUG
         m_debugNode = nullptr;
@@ -48,6 +50,8 @@ public:
     CC_SYNTHESIZE(cocos2d::Size, m_starSize, StarSize)
     CC_SYNTHESIZE(cocos2d::Vec2, m_origin, Origin)
     
+    CC_SYNTHESIZE(ScoreLayer*, m_scoreLayer, ScoreLayer)
+    
 private:
     // touch process
     void registerTouchListener();
@@ -69,6 +73,9 @@ private:
 #ifdef STAR_DEBUG
     void setDebugNode();
 #endif
+    
+private:
+    void runAddScoreAnimation(std::vector<cocos2d::Vec2> starPosArray);
     
 private:
     std::vector< std::vector<Star*> > m_starTable;

@@ -41,6 +41,7 @@ bool MainScene::init()
         //
         m_scoreLayer = ScoreLayer::create();
         this->addChild(m_scoreLayer, CHILD_ORDER_SCORE_LAYER);
+        m_starLayer->setScoreLayer(m_scoreLayer);
         
         return true;
     }
