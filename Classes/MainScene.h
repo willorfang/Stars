@@ -12,6 +12,7 @@
 #include "cocos2d.h"
 
 class StarLayer;
+class ScoreLayer;
 
 class MainScene : public cocos2d::Scene
 {
@@ -26,6 +27,7 @@ protected:
     
 private:
     StarLayer* m_starLayer;
+    ScoreLayer* m_scoreLayer;
 };
 
 #endif /* defined(__Stars__MainScene__) */
